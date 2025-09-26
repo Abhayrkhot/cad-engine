@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { init, area, perimeter, centroid, isWasmAvailable, benchmark } from 'cad-geo-sdk'
 import Canvas from './components/Canvas'
 import PerformanceToggle from './components/PerformanceToggle'
