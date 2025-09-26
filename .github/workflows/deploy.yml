@@ -51,7 +51,7 @@ jobs:
         run: cd typescript-sdk && pnpm run build
 
       - name: Install React demo dependencies
-        run: cd react-demo && pnpm install
+        run: cd react-demo && pnpm install --no-frozen-lockfile
 
       - name: Build React demo
         run: cd react-demo && pnpm run build

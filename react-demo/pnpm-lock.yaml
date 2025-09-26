@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       cad-geo-sdk:
-        specifier: ../typescript-sdk
-        version: link:../typescript-sdk
+        specifier: file:../typescript-sdk
+        version: file:../typescript-sdk
       react:
         specifier: ^18.2.0
         version: 18.3.1
@@ -307,6 +307,9 @@ packages:
     resolution: {integrity: sha512-ECFzp6uFOSB+dcZ5BK/IBaGWssbSYBHvuMeMt3MMFyhI0Z8SqGgEkBLARgpRH3hutIgPVsALcMwbDrJqPxQ65A==}
     engines: {node: ^6 || ^7 || ^8 || ^9 || ^10 || ^11 || ^12 || >=13.7}
     hasBin: true
+
+  cad-geo-sdk@file:../typescript-sdk:
+    resolution: {directory: ../typescript-sdk, type: directory}
 
   caniuse-lite@1.0.30001745:
     resolution: {integrity: sha512-ywt6i8FzvdgrrrGbr1jZVObnVv6adj+0if2/omv9cmR2oiZs30zL4DIyaptKcbOrBdOIc74QTMoJvSE2QHh5UQ==}
@@ -710,6 +713,10 @@ snapshots:
       electron-to-chromium: 1.5.224
       node-releases: 2.0.21
       update-browserslist-db: 1.1.3(browserslist@4.26.2)
+
+  cad-geo-sdk@file:../typescript-sdk:
+    dependencies:
+      cad-geometry-engine: link:pkg
 
   caniuse-lite@1.0.30001745: {}
 
