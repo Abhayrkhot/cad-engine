@@ -16,5 +16,10 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: ['cad-geometry-engine']
+  },
+  resolve: {
+    alias: {
+      'cad-geometry-engine': '/assets/cad_geometry_engine.js'
+    }
   }
 })

@@ -28,8 +28,8 @@ export async function init(): Promise<void> {
   }
 
   try {
-    // Try to load the WASM module
-    const wasm = await import('./cad_geometry_engine.js');
+    // Try to load the WASM module dynamically
+    const wasm = await import('cad-geometry-engine');
     wasmModule = wasm as any;
     isInitialized = true;
     console.log('CAD Geometry Engine: WASM module loaded successfully');
