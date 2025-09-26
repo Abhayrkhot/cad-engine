@@ -1,5 +1,5 @@
-import React, { forwardRef, useEffect, useRef, useImperativeHandle } from 'react';
-import { createSquare, createTriangle, createCircle, transform, createMatrix, area, perimeter, centroid } from 'cad-geo-sdk';
+import { forwardRef, useEffect, useRef, useImperativeHandle } from 'react';
+import { createSquare, createTriangle, createCircle, transform, createMatrix, centroid } from 'cad-geo-sdk';
 import { Shape } from '../types';
 
 interface CanvasProps {
@@ -14,8 +14,7 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
   shapes,
   selectedShape,
   onShapeSelect,
-  onShapeUpdate,
-  useWasm
+  onShapeUpdate
 }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDragging = useRef(false);

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { init, createSquare, createTriangle, createCircle, area, perimeter, centroid, transform, createMatrix, isWasmAvailable, benchmark } from 'cad-geo-sdk'
+import { useState, useEffect, useRef } from 'react'
+import { init, area, perimeter, centroid, isWasmAvailable, benchmark } from 'cad-geo-sdk'
 import Canvas from './components/Canvas'
 import PerformanceToggle from './components/PerformanceToggle'
 import BenchmarkResults from './components/BenchmarkResults'
