@@ -38,11 +38,20 @@ jobs:
       - name: Install pnpm
         run: npm install -g pnpm
 
-      - name: Install dependencies
+      - name: Install root dependencies
         run: pnpm install
 
       - name: Build WASM module
         run: pnpm run build:wasm
+
+      - name: Install TypeScript SDK dependencies
+        run: cd typescript-sdk && pnpm install
+
+      - name: Build TypeScript SDK
+        run: cd typescript-sdk && pnpm run build
+
+      - name: Install React demo dependencies
+        run: cd react-demo && pnpm install
 
       - name: Build React demo
         run: cd react-demo && pnpm run build
