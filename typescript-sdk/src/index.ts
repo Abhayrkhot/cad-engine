@@ -1,0 +1,190 @@
+import { Point, Polygon, Matrix, TransformOptions } from './types.js';
+import { GeometryJS } from './geometry-js.js';
+
+// Re-export types
+export * from './types.js';
+
+// WASM module interface
+interface WasmModule {
+  Point: new (x: number, y: number) => Point;
+  Vector: new (x: number, y: number) => any;
+  Polygon: new (vertices: any) => Polygon;
+  Matrix: new () => Matrix;
+  createSquare: (size: number) => Polygon;
+  createTriangle: (base: number, height: number) => Polygon;
+  calculateArea: (vertices: any) => number;
+  calculatePerimeter: (vertices: any) => number;
+  calculateCentroid: (vertices: any) => Point;
+  transformPolygon: (vertices: any, matrix: Matrix) => any;
+}
+
+let wasmModule: WasmModule | null = null;
+let isInitialized = false;
+
+// Initialize the WASM module
+export async function init(): Promise<void> {
+  if (isInitialized) {
+    return;
+  }
+
+  try {
+    // Try to load the WASM module
+    const wasm = await import('cad-geometry-engine');
+    wasmModule = wasm as any;
+    isInitialized = true;
+    console.log('CAD Geometry Engine: WASM module loaded successfully');
+  } catch (error) {
+    console.warn('CAD Geometry Engine: WASM module not available, falling back to JavaScript implementation');
+    isInitialized = true;
+  }
+}
+
+// Check if WASM is available
+export function isWasmAvailable(): boolean {
+  return wasmModule !== null;
+}
+
+// Core geometry functions
+export function area(polygon: Polygon): number {
+  if (wasmModule) {
+    try {
+      return wasmModule.calculateArea(polygon.vertices);
+    } catch (error) {
+      console.warn('WASM area calculation failed, falling back to JS:', error);
+    }
+  }
+  return GeometryJS.area(polygon);
+}
+
+export function perimeter(polygon: Polygon): number {
+  if (wasmModule) {
+    try {
+      return wasmModule.calculatePerimeter(polygon.vertices);
+    } catch (error) {
+      console.warn('WASM perimeter calculation failed, falling back to JS:', error);
+    }
+  }
+  return GeometryJS.perimeter(polygon);
+}
+
+export function centroid(polygon: Polygon): Point {
+  if (wasmModule) {
+    try {
+      return wasmModule.calculateCentroid(polygon.vertices);
+    } catch (error) {
+      console.warn('WASM centroid calculation failed, falling back to JS:', error);
+    }
+  }
+  return GeometryJS.centroid(polygon);
+}
+
+export function transform(polygon: Polygon, matrix: Matrix): Polygon {
+  if (wasmModule) {
+    try {
+      const transformedVertices = wasmModule.transformPolygon(polygon.vertices, matrix);
+      return { vertices: transformedVertices };
+    } catch (error) {
+      console.warn('WASM transform failed, falling back to JS:', error);
+    }
+  }
+  return GeometryJS.transform(polygon, matrix);
+}
+
+// Matrix creation functions
+export function createMatrix(options: TransformOptions): Matrix {
+  return GeometryJS.createMatrix(options);
+}
+
+export function translate(dx: number, dy: number): Matrix {
+  return createMatrix({ translate: { x: dx, y: dy } });
+}
+
+export function rotate(angle: number): Matrix {
+  return createMatrix({ rotate: angle });
+}
+
+export function scale(sx: number, sy: number): Matrix {
+  return createMatrix({ scale: { x: sx, y: sy } });
+}
+
+// Shape creation functions
+export function createSquare(size: number): Polygon {
+  if (wasmModule) {
+    try {
+      return wasmModule.createSquare(size);
+    } catch (error) {
+      console.warn('WASM createSquare failed, falling back to JS:', error);
+    }
+  }
+  return GeometryJS.createSquare(size);
+}
+
+export function createTriangle(base: number, height: number): Polygon {
+  if (wasmModule) {
+    try {
+      return wasmModule.createTriangle(base, height);
+    } catch (error) {
+      console.warn('WASM createTriangle failed, falling back to JS:', error);
+    }
+  }
+  return GeometryJS.createTriangle(base, height);
+}
+
+// Utility functions
+export function createCircle(center: Point, radius: number, segments: number = 32): Polygon {
+  const vertices: Point[] = [];
+  const angleStep = (2 * Math.PI) / segments;
+  
+  for (let i = 0; i < segments; i++) {
+    const angle = i * angleStep;
+    vertices.push({
+      x: center.x + radius * Math.cos(angle),
+      y: center.y + radius * Math.sin(angle)
+    });
+  }
+  
+  return { vertices };
+}
+
+export function createRectangle(width: number, height: number): Polygon {
+  return {
+    vertices: [
+      { x: 0, y: 0 },
+      { x: width, y: 0 },
+      { x: width, y: height },
+      { x: 0, y: height }
+    ]
+  };
+}
+
+// Performance benchmarking
+export function benchmark(iterations: number = 1000): { wasm: number; js: number; ratio: number } {
+  const testPolygon = createSquare(1);
+  
+  // Benchmark JavaScript implementation
+  const jsStart = performance.now();
+  for (let i = 0; i < iterations; i++) {
+    GeometryJS.area(testPolygon);
+    GeometryJS.perimeter(testPolygon);
+    GeometryJS.centroid(testPolygon);
+  }
+  const jsTime = performance.now() - jsStart;
+  
+  // Benchmark WASM implementation (if available)
+  let wasmTime = 0;
+  if (wasmModule) {
+    const wasmStart = performance.now();
+    for (let i = 0; i < iterations; i++) {
+      wasmModule.calculateArea(testPolygon.vertices);
+      wasmModule.calculatePerimeter(testPolygon.vertices);
+      wasmModule.calculateCentroid(testPolygon.vertices);
+    }
+    wasmTime = performance.now() - wasmStart;
+  }
+  
+  return {
+    wasm: wasmTime,
+    js: jsTime,
+    ratio: wasmTime > 0 ? jsTime / wasmTime : 0
+  };
+}

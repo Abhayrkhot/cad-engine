@@ -1,0 +1,24 @@
+{
+  "name": "cad-geometry-engine",
+  "version": "1.0.0",
+  "description": "Cross-platform CAD geometry engine with Rust, WebAssembly, TypeScript, and React",
+  "type": "module",
+  "scripts": {
+    "build:wasm": "cd rust-core && wasm-pack build --target web --out-dir ../typescript-sdk/pkg",
+    "dev": "cd react-demo && npm run dev",
+    "test": "npm run test:rust && npm run test:typescript",
+    "test:rust": "cd rust-core && cargo test",
+    "test:typescript": "cd typescript-sdk && npm test",
+    "bench": "cd react-demo && npm run bench",
+    "build": "npm run build:wasm && cd react-demo && npm run build",
+    "install:all": "npm install && cd typescript-sdk && npm install && cd ../react-demo && npm install"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  },
+  "workspaces": [
+    "typescript-sdk",
+    "react-demo"
+  ]
+}
