@@ -56,6 +56,11 @@ jobs:
       - name: Build React demo
         run: cd react-demo && pnpm run build
 
+      - name: Copy WASM files to build output
+        run: |
+          cp typescript-sdk/pkg/*.wasm react-demo/dist/assets/ 2>/dev/null || true
+          cp typescript-sdk/pkg/*.js react-demo/dist/assets/ 2>/dev/null || true
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
