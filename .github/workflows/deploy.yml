@@ -56,13 +56,18 @@ jobs:
       - name: Build React demo
         run: cd react-demo && pnpm run build
 
-      - name: Copy WASM files to build output
+      - name: Copy WASM files to TypeScript SDK and build output
         run: |
           echo "Checking for WASM files in typescript-sdk/pkg/"
           ls -la typescript-sdk/pkg/ || echo "pkg directory not found"
-          echo "Copying WASM files..."
+          echo "Copying WASM files to TypeScript SDK src directory..."
+          cp typescript-sdk/pkg/*.wasm typescript-sdk/src/ || echo "No WASM files found"
+          cp typescript-sdk/pkg/*.js typescript-sdk/src/ || echo "No JS files found"
+          echo "Copying WASM files to React demo assets..."
           cp typescript-sdk/pkg/*.wasm react-demo/dist/assets/ || echo "No WASM files found"
           cp typescript-sdk/pkg/*.js react-demo/dist/assets/ || echo "No JS files found"
+          echo "Files in typescript-sdk/src/ after copy:"
+          ls -la typescript-sdk/src/
           echo "Files in react-demo/dist/assets/ after copy:"
           ls -la react-demo/dist/assets/
 
