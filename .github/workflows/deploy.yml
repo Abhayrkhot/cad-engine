@@ -58,8 +58,13 @@ jobs:
 
       - name: Copy WASM files to build output
         run: |
-          cp typescript-sdk/pkg/*.wasm react-demo/dist/assets/ 2>/dev/null || true
-          cp typescript-sdk/pkg/*.js react-demo/dist/assets/ 2>/dev/null || true
+          echo "Checking for WASM files in typescript-sdk/pkg/"
+          ls -la typescript-sdk/pkg/ || echo "pkg directory not found"
+          echo "Copying WASM files..."
+          cp typescript-sdk/pkg/*.wasm react-demo/dist/assets/ || echo "No WASM files found"
+          cp typescript-sdk/pkg/*.js react-demo/dist/assets/ || echo "No JS files found"
+          echo "Files in react-demo/dist/assets/ after copy:"
+          ls -la react-demo/dist/assets/
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
