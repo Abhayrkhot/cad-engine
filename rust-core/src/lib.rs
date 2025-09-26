@@ -1,5 +1,6 @@
 use wasm_bindgen::prelude::*;
 use serde::{Deserialize, Serialize};
+use serde_wasm_bindgen;
 
 // Enable console.log for debugging
 #[wasm_bindgen]
@@ -180,164 +181,74 @@ impl Matrix {
     }
 }
 
-// WASM bindings
+// Simple WASM bindings - just functions, no complex types
 #[wasm_bindgen]
-impl Point {
-    #[wasm_bindgen(constructor)]
-    pub fn new_wasm(x: f64, y: f64) -> Point {
-        Point::new(x, y)
-    }
-    
-    #[wasm_bindgen(getter)]
-    pub fn x(&self) -> f64 {
-        self.x
-    }
-    
-    #[wasm_bindgen(getter)]
-    pub fn y(&self) -> f64 {
-        self.y
-    }
-}
-
-#[wasm_bindgen]
-impl Vector {
-    #[wasm_bindgen(constructor)]
-    pub fn new_wasm(x: f64, y: f64) -> Vector {
-        Vector::new(x, y)
-    }
-    
-    #[wasm_bindgen(getter)]
-    pub fn x(&self) -> f64 {
-        self.x
-    }
-    
-    #[wasm_bindgen(getter)]
-    pub fn y(&self) -> f64 {
-        self.y
-    }
-    
-    #[wasm_bindgen]
-    pub fn magnitude(&self) -> f64 {
-        self.magnitude()
-    }
-    
-    #[wasm_bindgen]
-    pub fn normalize(&self) -> Vector {
-        self.normalize()
-    }
-}
-
-#[wasm_bindgen]
-impl Polygon {
-    #[wasm_bindgen(constructor)]
-    pub fn new_wasm(vertices: &JsValue) -> Result<Polygon, JsValue> {
-        let points: Vec<Point> = vertices.into_serde().map_err(|e| JsValue::from_str(&e.to_string()))?;
-        Ok(Polygon::new(points))
-    }
-    
-    #[wasm_bindgen]
-    pub fn area(&self) -> f64 {
-        self.area()
-    }
-    
-    #[wasm_bindgen]
-    pub fn perimeter(&self) -> f64 {
-        self.perimeter()
-    }
-    
-    #[wasm_bindgen]
-    pub fn centroid(&self) -> Point {
-        self.centroid()
-    }
-    
-    #[wasm_bindgen]
-    pub fn transform(&self, matrix: &Matrix) -> Polygon {
-        self.transform(matrix)
-    }
-    
-    #[wasm_bindgen]
-    pub fn vertices(&self) -> JsValue {
-        JsValue::from_serde(&self.vertices).unwrap()
-    }
-}
-
-#[wasm_bindgen]
-impl Matrix {
-    #[wasm_bindgen(constructor)]
-    pub fn new_wasm() -> Matrix {
-        Matrix::identity()
-    }
-    
-    #[wasm_bindgen]
-    pub fn translate(dx: f64, dy: f64) -> Matrix {
-        Matrix::translate(dx, dy)
-    }
-    
-    #[wasm_bindgen]
-    pub fn scale(sx: f64, sy: f64) -> Matrix {
-        Matrix::scale(sx, sy)
-    }
-    
-    #[wasm_bindgen]
-    pub fn rotate(angle: f64) -> Matrix {
-        Matrix::rotate(angle)
-    }
-    
-    #[wasm_bindgen]
-    pub fn multiply(&self, other: &Matrix) -> Matrix {
-        self.multiply(other)
-    }
-}
-
-// Convenience functions for direct WASM usage
-#[wasm_bindgen]
-pub fn create_square(size: f64) -> Polygon {
+pub fn create_square(size: f64) -> JsValue {
     let vertices = vec![
         Point::new(0.0, 0.0),
         Point::new(size, 0.0),
         Point::new(size, size),
         Point::new(0.0, size),
     ];
-    Polygon::new(vertices)
+    let polygon = Polygon::new(vertices);
+    serde_wasm_bindgen::to_value(&polygon).unwrap()
 }
 
 #[wasm_bindgen]
-pub fn create_triangle(base: f64, height: f64) -> Polygon {
+pub fn create_triangle(base: f64, height: f64) -> JsValue {
     let vertices = vec![
         Point::new(0.0, 0.0),
         Point::new(base, 0.0),
         Point::new(base / 2.0, height),
     ];
-    Polygon::new(vertices)
+    let polygon = Polygon::new(vertices);
+    serde_wasm_bindgen::to_value(&polygon).unwrap()
 }
 
 #[wasm_bindgen]
-pub fn calculate_area(vertices: &JsValue) -> Result<f64, JsValue> {
-    let points: Vec<Point> = vertices.into_serde().map_err(|e| JsValue::from_str(&e.to_string()))?;
-    let polygon = Polygon::new(points);
-    Ok(polygon.area())
+pub fn calculate_area(vertices: &JsValue) -> f64 {
+    let polygon: Polygon = serde_wasm_bindgen::from_value(vertices.clone()).unwrap_or_else(|_| Polygon::new(vec![]));
+    polygon.area()
 }
 
 #[wasm_bindgen]
-pub fn calculate_perimeter(vertices: &JsValue) -> Result<f64, JsValue> {
-    let points: Vec<Point> = vertices.into_serde().map_err(|e| JsValue::from_str(&e.to_string()))?;
-    let polygon = Polygon::new(points);
-    Ok(polygon.perimeter())
+pub fn calculate_perimeter(vertices: &JsValue) -> f64 {
+    let polygon: Polygon = serde_wasm_bindgen::from_value(vertices.clone()).unwrap_or_else(|_| Polygon::new(vec![]));
+    polygon.perimeter()
 }
 
 #[wasm_bindgen]
-pub fn calculate_centroid(vertices: &JsValue) -> Result<Point, JsValue> {
-    let points: Vec<Point> = vertices.into_serde().map_err(|e| JsValue::from_str(&e.to_string()))?;
-    let polygon = Polygon::new(points);
-    Ok(polygon.centroid())
+pub fn calculate_centroid(vertices: &JsValue) -> JsValue {
+    let polygon: Polygon = serde_wasm_bindgen::from_value(vertices.clone()).unwrap_or_else(|_| Polygon::new(vec![]));
+    let centroid = polygon.centroid();
+    serde_wasm_bindgen::to_value(&centroid).unwrap()
 }
 
 #[wasm_bindgen]
-pub fn transform_polygon(vertices: &JsValue, matrix: &Matrix) -> Result<JsValue, JsValue> {
-    let points: Vec<Point> = vertices.into_serde().map_err(|e| JsValue::from_str(&e.to_string()))?;
-    let polygon = Polygon::new(points);
-    let transformed = polygon.transform(matrix);
-    Ok(JsValue::from_serde(&transformed.vertices).unwrap())
+pub fn transform_polygon(vertices: &JsValue, matrix_data: &JsValue) -> JsValue {
+    let polygon: Polygon = serde_wasm_bindgen::from_value(vertices.clone()).unwrap_or_else(|_| Polygon::new(vec![]));
+    let matrix: Matrix = serde_wasm_bindgen::from_value(matrix_data.clone()).unwrap_or_else(|_| Matrix::identity());
+    let transformed = polygon.transform(&matrix);
+    serde_wasm_bindgen::to_value(&transformed).unwrap()
+}
+
+#[wasm_bindgen]
+pub fn create_matrix(translate_x: f64, translate_y: f64, rotate_angle: f64, scale_x: f64, scale_y: f64) -> JsValue {
+    let mut matrix = Matrix::identity();
+    
+    if translate_x != 0.0 || translate_y != 0.0 {
+        matrix = matrix.multiply(&Matrix::translate(translate_x, translate_y));
+    }
+    
+    if rotate_angle != 0.0 {
+        matrix = matrix.multiply(&Matrix::rotate(rotate_angle));
+    }
+    
+    if scale_x != 1.0 || scale_y != 1.0 {
+        matrix = matrix.multiply(&Matrix::scale(scale_x, scale_y));
+    }
+    
+    serde_wasm_bindgen::to_value(&matrix).unwrap()
 }
 
 #[cfg(test)]
@@ -347,25 +258,29 @@ mod tests {
     #[test]
     fn test_square_area() {
         let square = create_square(2.0);
-        assert_eq!(square.area(), 4.0);
+        let polygon: Polygon = square.into_serde().unwrap();
+        assert_eq!(polygon.area(), 4.0);
     }
 
     #[test]
     fn test_triangle_area() {
         let triangle = create_triangle(4.0, 3.0);
-        assert_eq!(triangle.area(), 6.0);
+        let polygon: Polygon = triangle.into_serde().unwrap();
+        assert_eq!(polygon.area(), 6.0);
     }
 
     #[test]
     fn test_perimeter() {
         let square = create_square(1.0);
-        assert_eq!(square.perimeter(), 4.0);
+        let polygon: Polygon = square.into_serde().unwrap();
+        assert_eq!(polygon.perimeter(), 4.0);
     }
 
     #[test]
     fn test_centroid() {
         let square = create_square(2.0);
-        let centroid = square.centroid();
+        let polygon: Polygon = square.into_serde().unwrap();
+        let centroid = polygon.centroid();
         assert_eq!(centroid.x, 1.0);
         assert_eq!(centroid.y, 1.0);
     }
@@ -373,8 +288,9 @@ mod tests {
     #[test]
     fn test_transform() {
         let square = create_square(1.0);
+        let polygon: Polygon = square.into_serde().unwrap();
         let matrix = Matrix::translate(2.0, 3.0);
-        let transformed = square.transform(&matrix);
+        let transformed = polygon.transform(&matrix);
         let centroid = transformed.centroid();
         assert_eq!(centroid.x, 2.5);
         assert_eq!(centroid.y, 3.5);

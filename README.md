@@ -1,6 +1,14 @@
 # CAD Geometry Engine
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-🚀%20Try%20It%20Now-blue?style=for-the-badge&logo=github)](https://abhayrkhot.github.io/cad-geometry-engine/)
+
 A cross-platform CAD geometry engine built with Rust, WebAssembly, TypeScript, and React. This project demonstrates high-performance geometry calculations with a clean, modern web interface.
+
+## 🎯 **Live Demo**
+
+**👉 [Try the interactive demo now!](https://abhayrkhot.github.io/cad-geometry-engine/)**
+
+Experience real-time geometry calculations, interactive shape manipulation, and performance comparisons between Rust/WASM and JavaScript implementations.
 
 ## 🚀 Features
 
