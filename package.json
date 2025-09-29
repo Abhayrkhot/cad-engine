@@ -10,7 +10,8 @@
     "vercel-build": "npm run build:wasm && cd react-demo && npm run build",
     "test": "cd rust-core && cargo test && cd ../typescript-sdk && npm test",
     "bench": "cd typescript-sdk && npm run bench",
-    "install:all": "npm install && cd react-demo && npm install && cd ../typescript-sdk && npm install"
+    "install:all": "npm install && cd react-demo && npm install && cd ../typescript-sdk && npm install",
+    "postinstall": "cd react-demo && npm install"
   },
   "keywords": [
     "cad",

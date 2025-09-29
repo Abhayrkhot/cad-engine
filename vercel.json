@@ -1,21 +1,7 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "react-demo/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/react-demo/dist/$1"
-    }
-  ],
   "buildCommand": "npm run vercel-build",
   "outputDirectory": "react-demo/dist",
-  "installCommand": "npm install && cd react-demo && npm install"
+  "installCommand": "npm install",
+  "framework": null
 }
