@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Install wasm-pack
+echo "Installing wasm-pack..."
+curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+export PATH="$HOME/.cargo/bin:$PATH"
+
 # Build WebAssembly module
 echo "Building WebAssembly module..."
 cd rust-core

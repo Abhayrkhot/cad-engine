@@ -2,6 +2,6 @@
   "version": 2,
   "buildCommand": "npm run vercel-build",
   "outputDirectory": "react-demo/dist",
-  "installCommand": "npm install",
+  "installCommand": "npm install && cd react-demo && npm install",
   "framework": null
 }
