@@ -1,0 +1,15 @@
+{
+  "name": "cad-geometry-engine",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "cad_geometry_engine_bg.wasm",
+    "cad_geometry_engine.js",
+    "cad_geometry_engine.d.ts"
+  ],
+  "main": "cad_geometry_engine.js",
+  "types": "cad_geometry_engine.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

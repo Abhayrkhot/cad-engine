@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAD Geometry Engine - WASM Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .status {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-family: monospace;
+        }
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        button {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        .results {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .shape-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .benchmark {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .success { color: #2ecc71; }
+        .error { color: #e74c3c; }
+        .warning { color: #f39c12; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 CAD Geometry Engine</h1>
+        <p style="text-align: center; font-size: 1.2em; margin-bottom: 30px;">
+            Interactive geometry engine powered by Rust + WebAssembly
+        </p>
+        
+        <div class="status" id="status">
+            <div>🔄 Initializing WASM...</div>
+        </div>
+
+        <div class="controls">
+            <button onclick="addShape('square')">➕ Add Square</button>
+            <button onclick="addShape('triangle')">🔺 Add Triangle</button>
+            <button onclick="addShape('circle')">⭕ Add Circle</button>
+            <button onclick="runBenchmark()">⚡ Run Benchmark</button>
+            <button onclick="clearShapes()">🗑️ Clear All</button>
+        </div>
+
+        <div class="results" id="results">
+            <h3>📊 Shape Information</h3>
+            <div id="shapeList">No shapes added yet</div>
+        </div>
+
+        <div class="benchmark" id="benchmark" style="display: none;">
+            <h3>⚡ Performance Benchmark</h3>
+            <div id="benchmarkResults"></div>
+        </div>
+
+        <div class="status" id="engineStatus">
+            <div><strong>Engine Status:</strong></div>
+            <div id="wasmStatus">Checking WASM availability...</div>
+            <div id="modeStatus">Current mode: Loading...</div>
+            <div id="shapeCount">Shapes: 0</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { init, isWasmAvailable, area, perimeter, centroid, createSquare, createTriangle, createCircle, benchmark } from './typescript-sdk/dist/index.js';
+
+        let shapes = [];
+        let isInitialized = false;
+
+        async function initializeEngine() {
+            const statusDiv = document.getElementById('status');
+            const wasmStatusDiv = document.getElementById('wasmStatus');
+            const modeStatusDiv = document.getElementById('modeStatus');
+
+            try {
+                statusDiv.innerHTML = '<div>🔄 Loading WASM module...</div>';
+                await init();
+                
+                const wasmAvailable = isWasmAvailable();
+                isInitialized = true;
+                
+                if (wasmAvailable) {
+                    statusDiv.innerHTML = '<div class="success">✅ WASM module loaded successfully!</div>';
+                    wasmStatusDiv.innerHTML = '<span class="success">✅ WASM Available: Yes</span>';
+                    modeStatusDiv.innerHTML = '<span class="success">Current mode: WASM</span>';
+                } else {
+                    statusDiv.innerHTML = '<div class="warning">⚠️ WASM not available, using JavaScript fallback</div>';
+                    wasmStatusDiv.innerHTML = '<span class="warning">⚠️ WASM Available: No</span>';
+                    modeStatusDiv.innerHTML = '<span class="warning">Current mode: JavaScript</span>';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+                wasmStatusDiv.innerHTML = '<span class="error">❌ WASM Available: No</span>';
+                modeStatusDiv.innerHTML = '<span class="error">Current mode: JavaScript (Error)</span>';
+                isInitialized = true; // Still allow JS fallback
+            }
+        }
+
+        function addShape(type) {
+            if (!isInitialized) {
+                alert('Engine not initialized yet!');
+                return;
+            }
+
+            let shape;
+            const id = `${type}_${Date.now()}`;
+            
+            switch (type) {
+                case 'square':
+                    shape = createSquare(50);
+                    break;
+                case 'triangle':
+                    shape = createTriangle(60, 40);
+                    break;
+                case 'circle':
+                    shape = createCircle({ x: 0, y: 0 }, 30, 32);
+                    break;
+            }
+
+            shapes.push({ id, type, shape });
+            updateDisplay();
+        }
+
+        function clearShapes() {
+            shapes = [];
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            const shapeListDiv = document.getElementById('shapeList');
+            const shapeCountDiv = document.getElementById('shapeCount');
+            
+            shapeCountDiv.textContent = `Shapes: ${shapes.length}`;
+
+            if (shapes.length === 0) {
+                shapeListDiv.innerHTML = 'No shapes added yet';
+                return;
+            }
+
+            let html = '';
+            shapes.forEach((item, index) => {
+                const areaValue = area(item.shape);
+                const perimeterValue = perimeter(item.shape);
+                const centroidValue = centroid(item.shape);
+                
+                html += `
+                    <div class="shape-info">
+                        <h4>${item.type.charAt(0).toUpperCase() + item.type.slice(1)} #${index + 1}</h4>
+                        <p><strong>Area:</strong> ${areaValue.toFixed(2)}</p>
+                        <p><strong>Perimeter:</strong> ${perimeterValue.toFixed(2)}</p>
+                        <p><strong>Centroid:</strong> (${centroidValue.x.toFixed(2)}, ${centroidValue.y.toFixed(2)})</p>
+                    </div>
+                `;
+            });
+
+            shapeListDiv.innerHTML = html;
+        }
+
+        async function runBenchmark() {
+            if (!isInitialized) {
+                alert('Engine not initialized yet!');
+                return;
+            }
+
+            const benchmarkDiv = document.getElementById('benchmark');
+            const resultsDiv = document.getElementById('benchmarkResults');
+            
+            benchmarkDiv.style.display = 'block';
+            resultsDiv.innerHTML = '<div>🔄 Running benchmark...</div>';
+
+            try {
+                const results = benchmark(1000);
+                resultsDiv.innerHTML = `
+                    <div class="success">✅ Benchmark completed!</div>
+                    <p><strong>WASM Time:</strong> ${results.wasm.toFixed(2)}ms</p>
+                    <p><strong>JavaScript Time:</strong> ${results.js.toFixed(2)}ms</p>
+                    <p><strong>Performance Ratio:</strong> ${results.ratio.toFixed(2)}x ${results.ratio > 1 ? 'faster' : 'slower'}</p>
+                    <p><em>Note: For small operations, JavaScript may be faster due to WASM overhead.</em></p>
+                `;
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error">❌ Benchmark failed: ${error.message}</div>`;
+            }
+        }
+
+        // Make functions global
+        window.addShape = addShape;
+        window.runBenchmark = runBenchmark;
+        window.clearShapes = clearShapes;
+
+        // Initialize the engine
+        initializeEngine();
+    </script>
+</body>
+</html>

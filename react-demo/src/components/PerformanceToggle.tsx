@@ -31,3 +31,5 @@ const PerformanceToggle: React.FC<PerformanceToggleProps> = ({
 };
 
 export default PerformanceToggle;
+
+

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Direct WASM Test</title>
+</head>
+<body>
+    <h1>Direct WASM Test</h1>
+    <div id="result">Loading...</div>
+    
+    <script type="module">
+        const result = document.getElementById('result');
+        
+        try {
+            result.innerHTML = 'Loading WASM module directly...';
+            console.log('Loading WASM module directly...');
+            
+            // Try to load the WASM module directly
+            const wasm = await import('./typescript-sdk/dist/wasm/cad_geometry_engine.js');
+            console.log('WASM module loaded:', wasm);
+            result.innerHTML += '<br>WASM module loaded successfully';
+            
+            // Check exports
+            result.innerHTML += '<br>Exports: ' + Object.keys(wasm).join(', ');
+            
+            // Try to initialize
+            result.innerHTML += '<br>Initializing WASM...';
+            console.log('Initializing WASM...');
+            
+            const wasmInstance = await wasm.default();
+            console.log('WASM initialized:', wasmInstance);
+            result.innerHTML += '<br>WASM initialized successfully';
+            
+            // Test a function
+            if (wasm.calculate_area) {
+                const testPolygon = { vertices: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 }] };
+                const area = wasm.calculate_area(testPolygon);
+                result.innerHTML += '<br>Test calculation: ' + area;
+                console.log('Test calculation:', area);
+            } else {
+                result.innerHTML += '<br>calculate_area function not found';
+            }
+            
+        } catch (error) {
+            console.error('WASM Error:', error);
+            result.innerHTML += '<br style="color: red;">Error: ' + error.message;
+            result.innerHTML += '<br style="color: red;">Stack: ' + error.stack;
+        }
+    </script>
+</body>
+</html>

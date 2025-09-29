@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Environment Test</title>
+</head>
+<body>
+    <h1>Environment Test</h1>
+    <div id="result">Loading...</div>
+    
+    <script type="module">
+        const result = document.getElementById('result');
+        
+        result.innerHTML = 'Environment check:<br>';
+        result.innerHTML += 'window: ' + (typeof window !== 'undefined' ? 'defined' : 'undefined') + '<br>';
+        result.innerHTML += 'process: ' + (typeof process !== 'undefined' ? 'defined' : 'undefined') + '<br>';
+        result.innerHTML += 'process.versions: ' + (typeof process !== 'undefined' && process.versions ? 'defined' : 'undefined') + '<br>';
+        result.innerHTML += 'process.versions.node: ' + (typeof process !== 'undefined' && process.versions && process.versions.node ? process.versions.node : 'undefined') + '<br>';
+        
+        // Check if we're in Node.js environment
+        const isNode = typeof window === 'undefined' && typeof process !== 'undefined' && process.versions && process.versions.node;
+        result.innerHTML += '<br>Is Node.js: ' + isNode + '<br>';
+        result.innerHTML += 'Is Browser: ' + !isNode + '<br>';
+        
+        try {
+            result.innerHTML += '<br>Loading WASM module...';
+            const wasm = await import('./typescript-sdk/dist/wasm/cad_geometry_engine.js');
+            result.innerHTML += '<br>WASM module loaded successfully';
+            
+            // Try to initialize
+            result.innerHTML += '<br>Initializing WASM...';
+            const wasmInstance = await wasm.default();
+            result.innerHTML += '<br>WASM initialized successfully';
+            
+        } catch (error) {
+            result.innerHTML += '<br style="color: red;">Error: ' + error.message;
+            console.error('WASM Error:', error);
+        }
+    </script>
+</body>
+</html>

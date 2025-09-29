@@ -257,29 +257,48 @@ mod tests {
 
     #[test]
     fn test_square_area() {
-        let square = create_square(2.0);
-        let polygon: Polygon = square.into_serde().unwrap();
+        let vertices = vec![
+            Point::new(0.0, 0.0),
+            Point::new(2.0, 0.0),
+            Point::new(2.0, 2.0),
+            Point::new(0.0, 2.0),
+        ];
+        let polygon = Polygon::new(vertices);
         assert_eq!(polygon.area(), 4.0);
     }
 
     #[test]
     fn test_triangle_area() {
-        let triangle = create_triangle(4.0, 3.0);
-        let polygon: Polygon = triangle.into_serde().unwrap();
+        let vertices = vec![
+            Point::new(0.0, 0.0),
+            Point::new(4.0, 0.0),
+            Point::new(2.0, 3.0),
+        ];
+        let polygon = Polygon::new(vertices);
         assert_eq!(polygon.area(), 6.0);
     }
 
     #[test]
     fn test_perimeter() {
-        let square = create_square(1.0);
-        let polygon: Polygon = square.into_serde().unwrap();
+        let vertices = vec![
+            Point::new(0.0, 0.0),
+            Point::new(1.0, 0.0),
+            Point::new(1.0, 1.0),
+            Point::new(0.0, 1.0),
+        ];
+        let polygon = Polygon::new(vertices);
         assert_eq!(polygon.perimeter(), 4.0);
     }
 
     #[test]
     fn test_centroid() {
-        let square = create_square(2.0);
-        let polygon: Polygon = square.into_serde().unwrap();
+        let vertices = vec![
+            Point::new(0.0, 0.0),
+            Point::new(2.0, 0.0),
+            Point::new(2.0, 2.0),
+            Point::new(0.0, 2.0),
+        ];
+        let polygon = Polygon::new(vertices);
         let centroid = polygon.centroid();
         assert_eq!(centroid.x, 1.0);
         assert_eq!(centroid.y, 1.0);
@@ -287,12 +306,71 @@ mod tests {
 
     #[test]
     fn test_transform() {
-        let square = create_square(1.0);
-        let polygon: Polygon = square.into_serde().unwrap();
+        let vertices = vec![
+            Point::new(0.0, 0.0),
+            Point::new(1.0, 0.0),
+            Point::new(1.0, 1.0),
+            Point::new(0.0, 1.0),
+        ];
+        let polygon = Polygon::new(vertices);
         let matrix = Matrix::translate(2.0, 3.0);
         let transformed = polygon.transform(&matrix);
         let centroid = transformed.centroid();
         assert_eq!(centroid.x, 2.5);
         assert_eq!(centroid.y, 3.5);
+    }
+
+    #[test]
+    fn test_matrix_operations() {
+        let identity = Matrix::identity();
+        assert_eq!(identity.m11, 1.0);
+        assert_eq!(identity.m12, 0.0);
+        assert_eq!(identity.m21, 0.0);
+        assert_eq!(identity.m22, 1.0);
+        assert_eq!(identity.dx, 0.0);
+        assert_eq!(identity.dy, 0.0);
+
+        let translate = Matrix::translate(5.0, 10.0);
+        assert_eq!(translate.dx, 5.0);
+        assert_eq!(translate.dy, 10.0);
+
+        let scale = Matrix::scale(2.0, 3.0);
+        assert_eq!(scale.m11, 2.0);
+        assert_eq!(scale.m22, 3.0);
+
+        let rotate = Matrix::rotate(std::f64::consts::PI / 2.0);
+        assert!((rotate.m11 - 0.0).abs() < 1e-10);
+        assert!((rotate.m12 - (-1.0)).abs() < 1e-10);
+        assert!((rotate.m21 - 1.0).abs() < 1e-10);
+        assert!((rotate.m22 - 0.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_vector_operations() {
+        let v = Vector::new(3.0, 4.0);
+        assert_eq!(v.magnitude(), 5.0);
+        
+        let normalized = v.normalize();
+        assert!((normalized.magnitude() - 1.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_complex_polygon() {
+        // Test with a more complex polygon (hexagon)
+        let vertices = vec![
+            Point::new(0.0, 1.0),
+            Point::new(0.866, 0.5),
+            Point::new(0.866, -0.5),
+            Point::new(0.0, -1.0),
+            Point::new(-0.866, -0.5),
+            Point::new(-0.866, 0.5),
+        ];
+        let polygon = Polygon::new(vertices);
+        
+        // Area should be approximately 2.598 (for unit hexagon)
+        assert!((polygon.area() - 2.598).abs() < 0.1);
+        
+        // Perimeter should be approximately 6.0 (for unit hexagon)
+        assert!((polygon.perimeter() - 6.0).abs() < 0.1);
     }
 }

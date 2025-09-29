@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAD Geometry Engine - WASM Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover { background-color: #0056b3; }
+        #results { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>CAD Geometry Engine - WASM Test</h1>
+    
+    <div id="status" class="status info">Initializing...</div>
+    
+    <div>
+        <button onclick="testWasm()">Test WASM</button>
+        <button onclick="testJS()">Test JavaScript</button>
+        <button onclick="runBenchmark()">Run Benchmark</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script type="module">
+        let wasmModule = null;
+        let isInitialized = false;
+        
+        const statusEl = document.getElementById('status');
+        const resultsEl = document.getElementById('results');
+        
+        function updateStatus(message, type = 'info') {
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+        }
+        
+        async function initWasm() {
+            try {
+                const wasm = await import('./src/wasm/cad_geometry_engine.js');
+                wasmModule = wasm;
+                await wasm.default();
+                isInitialized = true;
+                updateStatus('WASM module loaded successfully!', 'success');
+                return true;
+            } catch (error) {
+                updateStatus(`WASM module failed to load: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        window.testWasm = async function() {
+            if (!isInitialized) {
+                const success = await initWasm();
+                if (!success) return;
+            }
+            
+            try {
+                const square = wasmModule.create_square(10);
+                const area = wasmModule.calculate_area(square);
+                const perimeter = wasmModule.calculate_perimeter(square);
+                
+                resultsEl.innerHTML = `
+                    <h3>WASM Test Results:</h3>
+                    <p><strong>Square (10x10):</strong></p>
+                    <p>Area: ${area}</p>
+                    <p>Perimeter: ${perimeter}</p>
+                `;
+                updateStatus('WASM test completed successfully!', 'success');
+            } catch (error) {
+                resultsEl.innerHTML = `<p>WASM test failed: ${error.message}</p>`;
+                updateStatus('WASM test failed', 'error');
+            }
+        };
+        
+        window.testJS = function() {
+            // Simple JavaScript implementation for comparison
+            function createSquare(size) {
+                return {
+                    vertices: [
+                        { x: 0, y: 0 },
+                        { x: size, y: 0 },
+                        { x: size, y: size },
+                        { x: 0, y: size }
+                    ]
+                };
+            }
+            
+            function calculateArea(vertices) {
+                let area = 0;
+                for (let i = 0; i < vertices.length; i++) {
+                    const j = (i + 1) % vertices.length;
+                    area += vertices[i].x * vertices[j].y;
+                    area -= vertices[j].x * vertices[i].y;
+                }
+                return Math.abs(area) / 2;
+            }
+            
+            function calculatePerimeter(vertices) {
+                let perimeter = 0;
+                for (let i = 0; i < vertices.length; i++) {
+                    const j = (i + 1) % vertices.length;
+                    const dx = vertices[j].x - vertices[i].x;
+                    const dy = vertices[j].y - vertices[i].y;
+                    perimeter += Math.sqrt(dx * dx + dy * dy);
+                }
+                return perimeter;
+            }
+            
+            const square = createSquare(10);
+            const area = calculateArea(square.vertices);
+            const perimeter = calculatePerimeter(square.vertices);
+            
+            resultsEl.innerHTML = `
+                <h3>JavaScript Test Results:</h3>
+                <p><strong>Square (10x10):</strong></p>
+                <p>Area: ${area}</p>
+                <p>Perimeter: ${perimeter}</p>
+            `;
+            updateStatus('JavaScript test completed successfully!', 'success');
+        };
+        
+        window.runBenchmark = async function() {
+            if (!isInitialized) {
+                const success = await initWasm();
+                if (!success) return;
+            }
+            
+            const iterations = 10000;
+            
+            // Benchmark JavaScript
+            const jsStart = performance.now();
+            for (let i = 0; i < iterations; i++) {
+                const square = { vertices: [{x:0,y:0}, {x:1,y:0}, {x:1,y:1}, {x:0,y:1}] };
+                const area = square.vertices[0].x * square.vertices[1].y; // Simplified
+            }
+            const jsTime = performance.now() - jsStart;
+            
+            // Benchmark WASM
+            const wasmStart = performance.now();
+            for (let i = 0; i < iterations; i++) {
+                const square = wasmModule.create_square(1);
+                wasmModule.calculate_area(square);
+            }
+            const wasmTime = performance.now() - wasmStart;
+            
+            const ratio = jsTime / wasmTime;
+            
+            resultsEl.innerHTML = `
+                <h3>Benchmark Results (${iterations} iterations):</h3>
+                <p><strong>JavaScript:</strong> ${jsTime.toFixed(2)}ms</p>
+                <p><strong>WASM:</strong> ${wasmTime.toFixed(2)}ms</p>
+                <p><strong>Speedup:</strong> ${ratio.toFixed(2)}x faster with WASM</p>
+            `;
+            updateStatus('Benchmark completed!', 'success');
+        };
+        
+        // Initialize on page load
+        initWasm();
+    </script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simple WASM Test</title>
+</head>
+<body>
+    <h1>Simple WASM Test</h1>
+    <div id="result">Loading...</div>
+    
+    <script type="module">
+        const result = document.getElementById('result');
+        
+        try {
+            console.log('Starting WASM test...');
+            result.innerHTML = 'Starting WASM test...';
+            
+            // Import the main SDK
+            const { init, isWasmAvailable } = await import('./typescript-sdk/dist/index.js');
+            console.log('SDK imported');
+            result.innerHTML = 'SDK imported, initializing...';
+            
+            // Initialize
+            await init();
+            console.log('Init completed');
+            
+            // Check availability
+            const available = isWasmAvailable();
+            console.log('WASM available:', available);
+            
+            result.innerHTML = `WASM Available: ${available}`;
+            
+        } catch (error) {
+            console.error('Error:', error);
+            result.innerHTML = `Error: ${error.message}`;
+        }
+    </script>
+</body>
+</html>

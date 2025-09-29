@@ -1,26 +1,36 @@
 {
-  "name": "cad-geometry-engine",
+  "name": "cad-engine",
   "version": "1.0.0",
-  "description": "Cross-platform CAD geometry engine with Rust, WebAssembly, TypeScript, and React",
-  "type": "module",
+  "description": "A high-performance cross-platform CAD geometry engine built with Rust, WebAssembly, TypeScript, and React",
+  "main": "index.js",
   "scripts": {
-    "build:wasm": "cd rust-core && wasm-pack build --target web --out-dir ../typescript-sdk/pkg",
-    "build:sdk": "cd typescript-sdk && npm run build",
-    "build:demo": "cd react-demo && npm run build",
-    "build": "npm run build:wasm && npm run build:sdk && npm run build:demo",
+    "build:wasm": "cd rust-core && wasm-pack build --target web --out-dir ../react-demo/src/wasm",
     "dev": "cd react-demo && npm run dev",
-    "test": "npm run test:rust && npm run test:typescript",
-    "test:rust": "cd rust-core && cargo test",
-    "test:typescript": "cd typescript-sdk && npm test",
-    "bench": "cd react-demo && npm run bench",
-    "install:all": "npm install && cd typescript-sdk && npm install && cd ../react-demo && npm install"
+    "build": "cd react-demo && npm run build",
+    "test": "cd rust-core && cargo test && cd ../typescript-sdk && npm test",
+    "bench": "cd typescript-sdk && npm run bench",
+    "install:all": "npm install && cd react-demo && npm install && cd ../typescript-sdk && npm install"
   },
-  "devDependencies": {
-    "typescript": "^5.0.0",
-    "@types/node": "^20.0.0"
+  "keywords": [
+    "cad",
+    "geometry",
+    "rust",
+    "webassembly",
+    "typescript",
+    "react",
+    "performance",
+    "2d",
+    "polygon",
+    "transformations"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/cad-engine.git"
   },
-  "workspaces": [
-    "typescript-sdk",
-    "react-demo"
-  ]
+  "bugs": {
+    "url": "https://github.com/yourusername/cad-engine/issues"
+  },
+  "homepage": "https://yourusername.github.io/cad-engine"
 }

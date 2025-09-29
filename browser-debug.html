@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Browser WASM Debug</title>
+</head>
+<body>
+    <h1>Browser WASM Debug</h1>
+    <div id="output"></div>
+    
+    <script type="module">
+        const output = document.getElementById('output');
+        
+        function log(message) {
+            console.log(message);
+            output.innerHTML += '<p>' + message + '</p>';
+        }
+        
+        try {
+            log('Starting browser WASM debug...');
+            
+            // Check environment
+            log('Environment check:');
+            log('window: ' + (typeof window !== 'undefined' ? 'defined' : 'undefined'));
+            log('process: ' + (typeof process !== 'undefined' ? 'defined' : 'undefined'));
+            
+            // Try to import the main SDK
+            log('Importing main SDK...');
+            const { init, isWasmAvailable } = await import('./typescript-sdk/dist/index.js');
+            log('Main SDK imported successfully');
+            
+            // Try to import WASM module directly
+            log('Importing WASM module directly...');
+            const wasm = await import('./typescript-sdk/dist/wasm/cad_geometry_engine.js');
+            log('WASM module imported successfully');
+            log('WASM exports: ' + Object.keys(wasm).join(', '));
+            
+            // Check if default function exists
+            if (typeof wasm.default === 'function') {
+                log('Default function exists, trying to initialize...');
+                const wasmInstance = await wasm.default();
+                log('WASM initialized successfully');
+                
+                // Test a function
+                if (wasm.calculate_area) {
+                    const testPolygon = { vertices: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 }] };
+                    const area = wasm.calculate_area(testPolygon);
+                    log('Test calculation result: ' + area);
+                } else {
+                    log('calculate_area function not found');
+                }
+            } else {
+                log('Default function not found');
+            }
+            
+            // Now try the main SDK initialization
+            log('Trying main SDK initialization...');
+            await init();
+            const available = isWasmAvailable();
+            log('Main SDK WASM available: ' + available);
+            
+        } catch (error) {
+            log('Error: ' + error.message);
+            log('Stack: ' + error.stack);
+            console.error('Browser WASM Debug Error:', error);
+        }
+    </script>
+</body>
+</html>

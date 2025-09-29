@@ -1,5 +1,4 @@
-import React, { forwardRef, useEffect, useRef, useImperativeHandle } from 'react';
-import { createSquare, createTriangle, createCircle, transform, createMatrix, centroid } from 'cad-geo-sdk';
+import React, { forwardRef, useEffect, useRef, useImperativeHandle, useMemo, useCallback } from 'react';
 import { Shape } from '../types';
 
 interface CanvasProps {
@@ -8,159 +7,71 @@ interface CanvasProps {
   onShapeSelect: (id: string) => void;
   onShapeUpdate: (id: string, updates: Partial<Shape>) => void;
   useWasm: boolean;
+  selectedTool: 'select' | 'rotate' | 'scale' | 'edit';
+  showGrid: boolean;
 }
 
 const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
   shapes,
   selectedShape,
   onShapeSelect,
-  onShapeUpdate
+  onShapeUpdate,
+  selectedTool,
+  showGrid
 }, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDragging = useRef(false);
   const dragStart = useRef({ x: 0, y: 0 });
   const lastMousePos = useRef({ x: 0, y: 0 });
+  const lastUpdateTime = useRef(0);
+  const initialScaleDistance = useRef(0);
 
   useImperativeHandle(ref, () => canvasRef.current!);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Set canvas size
-    canvas.width = 600;
-    canvas.height = 400;
-
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      // Draw grid
-      ctx.strokeStyle = '#333';
-      ctx.lineWidth = 1;
-      for (let x = 0; x < canvas.width; x += 20) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-      }
-      for (let y = 0; y < canvas.height; y += 20) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
-      }
-
-      // Draw shapes
-      shapes.forEach(shape => {
-        const polygon = getShapePolygon(shape);
-        const transformed = transform(polygon, createMatrix({
-          translate: shape.transform.translate,
-          rotate: shape.transform.rotate,
-          scale: shape.transform.scale
-        }));
-
-        // Draw shape
-        ctx.strokeStyle = shape.id === selectedShape ? '#646cff' : '#fff';
-        ctx.lineWidth = shape.id === selectedShape ? 3 : 2;
-        ctx.fillStyle = shape.id === selectedShape ? 'rgba(100, 108, 255, 0.2)' : 'rgba(255, 255, 255, 0.1)';
-        
-        ctx.beginPath();
-        ctx.moveTo(transformed.vertices[0].x, transformed.vertices[0].y);
-        for (let i = 1; i < transformed.vertices.length; i++) {
-          ctx.lineTo(transformed.vertices[i].x, transformed.vertices[i].y);
-        }
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // Draw centroid
-        const center = centroid(transformed);
-        ctx.fillStyle = '#ff6b6b';
-        ctx.beginPath();
-        ctx.arc(center.x, center.y, 3, 0, 2 * Math.PI);
-        ctx.fill();
-      });
-    };
-
-    draw();
-
-    const handleMouseDown = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      // Check if clicking on a shape
-      for (let i = shapes.length - 1; i >= 0; i--) {
-        const shape = shapes[i];
-        const polygon = getShapePolygon(shape);
-        const transformed = transform(polygon, createMatrix({
-          translate: shape.transform.translate,
-          rotate: shape.transform.rotate,
-          scale: shape.transform.scale
-        }));
-
-        if (isPointInPolygon({ x, y }, transformed.vertices)) {
-          onShapeSelect(shape.id);
-          isDragging.current = true;
-          dragStart.current = { x, y };
-          lastMousePos.current = { x, y };
-          break;
-        }
-      }
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging.current || !selectedShape) return;
-
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      
-      const dx = x - lastMousePos.current.x;
-      const dy = y - lastMousePos.current.y;
-      
-      onShapeUpdate(selectedShape, {
-        transform: {
-          ...shapes.find(s => s.id === selectedShape)!.transform,
-          translate: {
-            x: shapes.find(s => s.id === selectedShape)!.transform.translate.x + dx,
-            y: shapes.find(s => s.id === selectedShape)!.transform.translate.y + dy
-          }
-        }
-      });
-      
-      lastMousePos.current = { x, y };
-    };
-
-    const handleMouseUp = () => {
-      isDragging.current = false;
-    };
-
-    canvas.addEventListener('mousedown', handleMouseDown);
-    canvas.addEventListener('mousemove', handleMouseMove);
-    canvas.addEventListener('mouseup', handleMouseUp);
-
-    return () => {
-      canvas.removeEventListener('mousedown', handleMouseDown);
-      canvas.removeEventListener('mousemove', handleMouseMove);
-      canvas.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [shapes, selectedShape, onShapeSelect, onShapeUpdate]);
-
+  // Helper functions - defined before useMemo hooks
   const getShapePolygon = (shape: Shape) => {
     switch (shape.type) {
       case 'square':
-        return createSquare(shape.size);
+        const halfSize = shape.size / 2;
+        return [
+          { x: -halfSize, y: -halfSize },
+          { x: halfSize, y: -halfSize },
+          { x: halfSize, y: halfSize },
+          { x: -halfSize, y: halfSize }
+        ];
       case 'triangle':
-        return createTriangle(shape.base || 60, shape.height || 40);
+        const halfBase = (shape.base || 60) / 2;
+        const height = shape.height || 40;
+        return [
+          { x: 0, y: -height / 2 },
+          { x: -halfBase, y: height / 2 },
+          { x: halfBase, y: height / 2 }
+        ];
       case 'circle':
-        return createCircle(shape.center || { x: 100, y: 100 }, shape.radius || 30);
+        const radius = shape.radius || 30;
+        const points = [];
+        for (let i = 0; i < 32; i++) {
+          const angle = (i / 32) * 2 * Math.PI;
+          points.push({
+            x: Math.cos(angle) * radius,
+            y: Math.sin(angle) * radius
+          });
+        }
+        return points;
       default:
-        return createSquare(50);
+        return [];
     }
+  };
+
+  const getShapeBounds = (vertices: { x: number; y: number }[]) => {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    vertices.forEach(vertex => {
+      minX = Math.min(minX, vertex.x);
+      minY = Math.min(minY, vertex.y);
+      maxX = Math.max(maxX, vertex.x);
+      maxY = Math.max(maxY, vertex.y);
+    });
+    return { minX, minY, maxX, maxY };
   };
 
   const isPointInPolygon = (point: { x: number; y: number }, vertices: { x: number; y: number }[]) => {
@@ -174,11 +85,285 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(({
     return inside;
   };
 
+
+  // Memoized shape polygons
+  const shapePolygons = useMemo(() => {
+    return shapes.map(shape => {
+      const basePolygon = getShapePolygon(shape);
+      const transformedPolygon = basePolygon.map(vertex => ({
+        x: vertex.x * shape.transform.scale.x,
+        y: vertex.y * shape.transform.scale.y
+      })).map(vertex => {
+        const cos = Math.cos(shape.transform.rotate);
+        const sin = Math.sin(shape.transform.rotate);
+        return {
+          x: vertex.x * cos - vertex.y * sin + shape.transform.translate.x,
+          y: vertex.x * sin + vertex.y * cos + shape.transform.translate.y
+        };
+      });
+      return { shape, polygon: transformedPolygon };
+    });
+  }, [shapes]);
+
+  // Memoized transformed shapes for drawing
+  const transformedShapes = useMemo(() => {
+    return shapePolygons.map(({ shape, polygon }) => ({
+      shape,
+      polygon,
+      bounds: getShapeBounds(polygon)
+    }));
+  }, [shapePolygons]);
+
+  // Grid drawing function
+  const drawGrid = useCallback((ctx: CanvasRenderingContext2D, width: number, height: number) => {
+    if (!showGrid) return;
+    
+    const gridSize = 20;
+    ctx.strokeStyle = '#e0e0e0';
+    ctx.lineWidth = 0.5;
+    
+    // Vertical lines
+    for (let x = 0; x <= width; x += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    }
+    
+    // Horizontal lines
+    for (let y = 0; y <= height; y += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+  }, [showGrid]);
+
+  // Main draw function
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw grid
+    drawGrid(ctx, canvas.width, canvas.height);
+
+    // Draw shapes
+    transformedShapes.forEach(({ shape, polygon, bounds }) => {
+      const isSelected = selectedShape === shape.id;
+      
+      // Draw shape
+      ctx.beginPath();
+      ctx.moveTo(polygon[0].x, polygon[0].y);
+      for (let i = 1; i < polygon.length; i++) {
+        ctx.lineTo(polygon[i].x, polygon[i].y);
+      }
+      ctx.closePath();
+
+      // Fill
+      ctx.fillStyle = isSelected ? '#3b82f6' : '#6366f1';
+      ctx.fill();
+
+      // Stroke
+      ctx.strokeStyle = isSelected ? '#1d4ed8' : '#4f46e5';
+      ctx.lineWidth = isSelected ? 3 : 2;
+      ctx.stroke();
+
+      // Draw selection handles if selected
+      if (isSelected) {
+        ctx.fillStyle = '#1d4ed8';
+        const handleSize = 6;
+        const corners = [
+          { x: bounds.minX, y: bounds.minY },
+          { x: bounds.maxX, y: bounds.minY },
+          { x: bounds.maxX, y: bounds.maxY },
+          { x: bounds.minX, y: bounds.maxY }
+        ];
+        
+        corners.forEach(corner => {
+          ctx.fillRect(corner.x - handleSize/2, corner.y - handleSize/2, handleSize, handleSize);
+        });
+      }
+    });
+  }, [transformedShapes, selectedShape, drawGrid]);
+
+  // Mouse event handlers
+  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Find clicked shape
+    let clickedShape = null;
+    for (const { shape, polygon } of transformedShapes) {
+      if (isPointInPolygon({ x, y }, polygon)) {
+        clickedShape = shape;
+        break;
+      }
+    }
+
+    if (clickedShape) {
+      onShapeSelect(clickedShape.id);
+      isDragging.current = true;
+      // Store the offset from the shape's center to the click point
+      const shape = shapes.find(s => s.id === clickedShape.id);
+      if (shape) {
+        dragStart.current = { 
+          x: x - shape.transform.translate.x, 
+          y: y - shape.transform.translate.y 
+        };
+        
+        // For scaling, store the initial distance from center
+        if (selectedTool === 'scale') {
+          const centerX = shape.transform.translate.x;
+          const centerY = shape.transform.translate.y;
+          initialScaleDistance.current = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+        }
+      } else {
+        dragStart.current = { x, y };
+      }
+      lastMousePos.current = { x, y };
+    } else {
+      onShapeSelect(null);
+    }
+  }, [transformedShapes, onShapeSelect]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDragging.current || !selectedShape) return;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Throttle updates
+    const now = Date.now();
+    if (now - lastUpdateTime.current < 16) return; // ~60fps
+    lastUpdateTime.current = now;
+
+    const dx = x - lastMousePos.current.x;
+    const dy = y - lastMousePos.current.y;
+
+    if (selectedTool === 'select') {
+      // Move shape with bounds checking
+      const shape = shapes.find(s => s.id === selectedShape);
+      if (shape) {
+        const basePolygon = getShapePolygon(shape);
+        const transformedPolygon = basePolygon.map(vertex => ({
+          x: vertex.x * shape.transform.scale.x,
+          y: vertex.y * shape.transform.scale.y
+        })).map(vertex => {
+          const cos = Math.cos(shape.transform.rotate);
+          const sin = Math.sin(shape.transform.rotate);
+          return {
+            x: vertex.x * cos - vertex.y * sin,
+            y: vertex.x * sin + vertex.y * cos
+          };
+        });
+        
+        const bounds = getShapeBounds(transformedPolygon);
+        const shapeWidth = bounds.maxX - bounds.minX;
+        const shapeHeight = bounds.maxY - bounds.minY;
+        
+        // Calculate new position with bounds checking
+        let newX = x - dragStart.current.x;
+        let newY = y - dragStart.current.y;
+        
+        // Constrain to canvas bounds
+        const margin = 10; // Keep some margin from edges
+        newX = Math.max(margin, Math.min(canvas.width - shapeWidth - margin, newX));
+        newY = Math.max(margin, Math.min(canvas.height - shapeHeight - margin, newY));
+        
+        // Apply snap to grid if enabled
+        
+        onShapeUpdate(selectedShape, {
+          transform: {
+            ...shape.transform,
+            translate: { x: newX, y: newY }
+          }
+        });
+      }
+    } else if (selectedTool === 'rotate') {
+      // Rotate shape
+      const shape = shapes.find(s => s.id === selectedShape);
+      if (shape) {
+        const centerX = shape.transform.translate.x;
+        const centerY = shape.transform.translate.y;
+        const angle = Math.atan2(y - centerY, x - centerX);
+        onShapeUpdate(selectedShape, {
+          transform: {
+            ...shape.transform,
+            rotate: angle
+          }
+        });
+      }
+    } else if (selectedTool === 'scale') {
+      // Scale shape based on distance from center
+      const shape = shapes.find(s => s.id === selectedShape);
+      if (shape) {
+        const centerX = shape.transform.translate.x;
+        const centerY = shape.transform.translate.y;
+        const currentDistance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+        
+        // Use the initial distance when scaling started as reference
+        const initialDistance = initialScaleDistance.current || 30;
+        const scaleFactor = Math.max(0.1, Math.min(5.0, currentDistance / initialDistance)); // Limit scale between 0.1x and 5x
+        
+        onShapeUpdate(selectedShape, {
+          transform: {
+            ...shape.transform,
+            scale: { x: scaleFactor, y: scaleFactor }
+          }
+        });
+      }
+    }
+
+    lastMousePos.current = { x, y };
+  }, [selectedShape, selectedTool, onShapeUpdate, shapes]);
+
+  const handleMouseUp = useCallback(() => {
+    isDragging.current = false;
+  }, []);
+
+  // Throttled mouse move handler
+  const throttledMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    handleMouseMove(e);
+  }, [handleMouseMove]);
+
+  // Redraw when dependencies change
+  useEffect(() => {
+    draw();
+  }, [draw]);
+
   return (
-    <div className="canvas-container">
+    <div className="canvas-wrapper">
       <canvas
         ref={canvasRef}
-        style={{ cursor: isDragging.current ? 'grabbing' : 'grab' }}
+        className="geometry-canvas"
+        onMouseDown={handleMouseDown}
+        onMouseMove={throttledMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        style={{
+          cursor: isDragging.current ? 'grabbing' : (selectedShape ? 'grab' : 'default'),
+          width: '100%',
+          height: '100%',
+          display: 'block'
+        }}
       />
     </div>
   );

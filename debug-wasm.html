@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WASM Debug</title>
+</head>
+<body>
+    <h1>WASM Debug Test</h1>
+    <div id="output"></div>
+    
+    <script type="module">
+        const output = document.getElementById('output');
+        
+        async function debugWasm() {
+            try {
+                output.innerHTML = '<p>Loading WASM module...</p>';
+                
+                // Try to import the WASM module directly
+                const wasm = await import('./typescript-sdk/dist/wasm/cad_geometry_engine.js');
+                output.innerHTML += '<p>✅ WASM module imported successfully</p>';
+                
+                // Check what's exported
+                output.innerHTML += '<p>Exports: ' + Object.keys(wasm).join(', ') + '</p>';
+                
+                // Check if default function exists
+                if (typeof wasm.default === 'function') {
+                    output.innerHTML += '<p>✅ Default function exists</p>';
+                    
+                    // Try to initialize
+                    output.innerHTML += '<p>Initializing WASM...</p>';
+                    const wasmInstance = await wasm.default();
+                    output.innerHTML += '<p>✅ WASM initialized successfully</p>';
+                    
+                    // Test a function
+                    if (wasm.calculate_area) {
+                        const testPolygon = { vertices: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }, { x: 0, y: 1 }] };
+                        const area = wasm.calculate_area(testPolygon);
+                        output.innerHTML += '<p>✅ Test calculation: ' + area + '</p>';
+                    } else {
+                        output.innerHTML += '<p>❌ calculate_area function not found</p>';
+                    }
+                } else {
+                    output.innerHTML += '<p>❌ Default function not found</p>';
+                }
+                
+            } catch (error) {
+                output.innerHTML += '<p style="color: red;">❌ Error: ' + error.message + '</p>';
+                output.innerHTML += '<p style="color: red;">Stack: ' + error.stack + '</p>';
+                console.error('WASM Debug Error:', error);
+            }
+        }
+        
+        debugWasm();
+    </script>
+</body>
+</html>
