@@ -2,6 +2,8 @@
 
 A high-performance cross-platform CAD geometry engine built with Rust, WebAssembly, TypeScript, and React. This project demonstrates the power of WebAssembly for computationally intensive geometric operations in web applications.
 
+**🚀 [Live Demo](https://cad-engine-3zkc.vercel.app/) | 📚 [Documentation](#getting-started) | 🐛 [Issues](https://github.com/Abhayrkhot/cad-engine/issues)**
+
 ## Overview
 
 This engine provides a complete solution for 2D geometric operations including polygon calculations, transformations, and real-time interactive manipulation. The architecture showcases modern web development practices with Rust's performance benefits through WebAssembly.
@@ -44,6 +46,12 @@ cad-geometry-engine/
 └── ui-component-library/ # Shared UI components
 ```
 
+## Live Demo
+
+**🌐 [Try the CAD Engine Live](https://cad-engine-3zkc.vercel.app/)**
+
+Experience the full functionality of the CAD geometry engine with interactive shapes, real-time calculations, and performance benchmarks.
+
 ## Getting Started
 
 ### Prerequisites
@@ -55,7 +63,7 @@ cad-geometry-engine/
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/cad-engine.git
+   git clone https://github.com/Abhayrkhot/cad-engine.git
    cd cad-engine
    ```
 
