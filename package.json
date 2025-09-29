@@ -29,10 +29,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/cad-engine.git"
+    "url": "https://github.com/Abhayrkhot/cad-engine.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/cad-engine/issues"
+    "url": "https://github.com/Abhayrkhot/cad-engine/issues"
   },
-  "homepage": "https://yourusername.github.io/cad-engine"
+  "homepage": "https://cad-engine-3zkc.vercel.app"
 }
