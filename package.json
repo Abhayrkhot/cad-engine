@@ -6,7 +6,8 @@
   "scripts": {
     "build:wasm": "cd rust-core && wasm-pack build --target web --out-dir ../react-demo/src/wasm",
     "dev": "cd react-demo && npm run dev",
-    "build": "cd react-demo && npm run build",
+    "build": "npm run build:wasm && cd react-demo && npm run build",
+    "vercel-build": "npm run build:wasm && cd react-demo && npm run build",
     "test": "cd rust-core && cargo test && cd ../typescript-sdk && npm test",
     "bench": "cd typescript-sdk && npm run bench",
     "install:all": "npm install && cd react-demo && npm install && cd ../typescript-sdk && npm install"
